@@ -1,5 +1,5 @@
 import {vol} from 'memfs';
-import {ParquetSchema, ParquetWriter} from '@dsnp/parquetjs';
+import {ParquetSchema} from '@dsnp/parquetjs';
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 
 import {JsonParquetMerger} from './index';
