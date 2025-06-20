@@ -1,5 +1,3 @@
-#!/usr/bin/env tsx
-
 import {Command} from 'commander';
 import {glob} from 'glob';
 import chalk from 'chalk';
