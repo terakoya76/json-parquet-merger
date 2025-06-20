@@ -1,0 +1,40 @@
+{
+  "name": "json-parquet-merger",
+  "version": "0.1.0",
+  "description": "TypeScript CLI tool for merging multiple JSON files of the same format into a single Parquet file",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "json-parquet-merger": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "cli": "tsx src/index.ts",
+    "clean": "gts clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "pnpm lint:gts",
+    "lint:gts": "gts fix"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.0.0",
+    "date-fns": "^3.6.0",
+    "glob": "^10.3.0",
+    "parquetjs": "^0.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/parquetjs": "^0.10.6",
+    "@vitest/ui": "^1.0.0",
+    "gts": "^6.0.2",
+    "memfs": "^4.6.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=10.0.0"
+  }
+}

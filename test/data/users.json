@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "John Doe",
+    "age": 30,
+    "active": true,
+    "metadata": {
+      "department": "Engineering",
+      "skills": ["JavaScript", "TypeScript", "Node.js"]
+    }
+  },
+  {
+    "id": 2,
+    "name": "Jane Smith",
+    "age": 28,
+    "active": false,
+    "metadata": {
+      "department": "Design",
+      "skills": ["UI/UX", "Figma", "Sketch"]
+    }
+  }
+]
