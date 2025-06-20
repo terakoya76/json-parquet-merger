@@ -12,9 +12,10 @@
       ],
     },
     {
-      "groupName": "nodejs-modules-minor-patch-updates",
-      "matchManagers": [
-        "npm"
+      "groupName": "npm-modules-minor-patch-updates",
+      "managerFilePatterns": [
+        "/(^|/)package\\.json$/",
+        "/(^|/)pnpm-workspace\\.yaml$/"
       ],
       "matchUpdateTypes": [
         "patch",
