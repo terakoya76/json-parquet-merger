@@ -1,0 +1,38 @@
+name: test
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        node-version: ['18.x', '22.x']
+
+    name: all
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 10
+
+    - name: Install Dependencies
+      run: pnpm i -r
+
+    - name: Run Build
+      run: pnpm build
+
+    - name: Run Lint
+      run: pnpm lint
+
+    - name: Run Test
+      run: pnpm test
