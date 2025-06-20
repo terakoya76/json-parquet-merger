@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk:*)",
+      "Bash(cp:*)",
+      "Bash(echo:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(node:*)",
+      "Bash(rg:*)",
+      "Bash(rm:*)",
+      "Bash(sed:*)",
+      "Bash(pnpm:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm search:*)",
+      "Bash(npx vitest run:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)"
+    ]
+  }
+}
