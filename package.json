@@ -24,7 +24,7 @@
     "glob": "^10.3.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "@vitest/ui": "^1.0.0",
     "eslint-plugin-n": "^17.14.0",
     "gts": "^6.0.2",
