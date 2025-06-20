@@ -1,5 +1,5 @@
 import {vol} from 'memfs';
-import {ParquetSchema} from 'parquetjs';
+import {ParquetSchema, ParquetWriter} from '@dsnp/parquetjs';
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 
 import {JsonParquetMerger} from './index';
@@ -7,7 +7,7 @@ import {JsonParquetMerger} from './index';
 // Mock external dependencies before importing the module under test
 vi.mock('fs/promises', () => import('memfs').then(({fs}) => fs.promises));
 vi.mock('glob');
-vi.mock('parquetjs', () => ({
+vi.mock('@dsnp/parquetjs', () => ({
   ParquetWriter: {
     openFile: vi.fn(),
   },
@@ -27,9 +27,6 @@ describe('JsonParquetMerger', () => {
   beforeEach(async () => {
     // Reset memfs before each test
     vol.reset();
-
-    // Import after mocks are set up
-    await import('./index');
 
     vi.clearAllMocks();
   });
@@ -168,7 +165,7 @@ describe('JsonParquetMerger', () => {
       await merger['inferSchema']('/test/file.json');
       expect(merger['inferredSchema']).toBeDefined();
 
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
         name: {type: 'UTF8', optional: true},
         age: {type: 'INT64', optional: true},
@@ -189,7 +186,7 @@ describe('JsonParquetMerger', () => {
       });
       await merger['inferSchema']('/test/file.json');
 
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
         name: {type: 'UTF8', optional: true},
         value: {type: 'INT64', optional: true},
@@ -214,7 +211,7 @@ describe('JsonParquetMerger', () => {
       });
       await merger['inferSchema']('/test/file.json');
 
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
         metadata: {type: 'UTF8', optional: true},
       });
@@ -243,7 +240,7 @@ describe('JsonParquetMerger', () => {
       });
       await merger['inferSchema']('/test/file.json');
 
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         stringField: {type: 'UTF8', optional: true},
         intField: {type: 'INT64', optional: true},
         floatField: {type: 'DOUBLE', optional: true},
@@ -295,12 +292,10 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
       });
-      merger['inferredSchema'] = {
-        fields: {
-          id: {type: 'INT64', optional: true},
-          name: {type: 'UTF8', optional: true},
-        },
-      };
+      merger['inferredSchema'] = new ParquetSchema({
+        id: {type: 'INT64', optional: true},
+        name: {type: 'UTF8', optional: true},
+      });
 
       const result = await merger['validateSchema']([{id: 1, extra: 'field'}]);
       expect(result).toBe(true);
@@ -313,12 +308,10 @@ describe('JsonParquetMerger', () => {
         validate: true,
         batchSize: 1000,
       });
-      merger['inferredSchema'] = {
-        fields: {
-          id: {type: 'INT64', optional: true},
-          name: {type: 'UTF8', optional: true},
-        },
-      };
+      merger['inferredSchema'] = new ParquetSchema({
+        id: {type: 'INT64', optional: true},
+        name: {type: 'UTF8', optional: true},
+      });
 
       const result = await merger['validateSchema']([{id: 1}]);
       expect(result).toBe(false);
@@ -331,11 +324,9 @@ describe('JsonParquetMerger', () => {
         validate: true,
         batchSize: 1000,
       });
-      merger['inferredSchema'] = {
-        fields: {
-          id: {type: 'INT64', optional: true},
-        },
-      };
+      merger['inferredSchema'] = new ParquetSchema({
+        id: {type: 'INT64', optional: true},
+      });
 
       const result = await merger['validateSchema']([
         {id: 1, name: 'John', extra: 'field'},
@@ -350,12 +341,10 @@ describe('JsonParquetMerger', () => {
         validate: true,
         batchSize: 1000,
       });
-      merger['inferredSchema'] = {
-        fields: {
-          id: {type: 'INT64', optional: true},
-          name: {type: 'UTF8', optional: true},
-        },
-      };
+      merger['inferredSchema'] = new ParquetSchema({
+        id: {type: 'INT64', optional: true},
+        name: {type: 'UTF8', optional: true},
+      });
 
       vi.spyOn(console, 'warn').mockImplementation(() => {});
       const result = await merger['validateSchema']([{id: 1, name: 'John'}]);
@@ -369,13 +358,11 @@ describe('JsonParquetMerger', () => {
         validate: true,
         batchSize: 1000,
       });
-      merger['inferredSchema'] = {
-        fields: {
-          id: {type: 'INT64', optional: true},
-          name: {type: 'UTF8', optional: true},
-          age: {type: 'INT64', optional: true},
-        },
-      };
+      merger['inferredSchema'] = new ParquetSchema({
+        id: {type: 'INT64', optional: true},
+        name: {type: 'UTF8', optional: true},
+        age: {type: 'INT64', optional: true},
+      });
 
       const result = await merger['validateSchema']([
         {id: 1, extra: 'field'}, // missing name, age; has extra field
@@ -462,7 +449,17 @@ describe('JsonParquetMerger', () => {
     it('should write records to ParquetWriter and update count', async () => {
       const mockWriter = {
         appendRow: vi.fn(),
-      };
+        schema: {} as any,
+        envelopeWriter: null,
+        rowBuffer: {} as any,
+        rowGroupSize: 1000,
+        closed: false,
+        userMetadata: {},
+        close: vi.fn(),
+        setMetadata: vi.fn(),
+        setRowGroupSize: vi.fn(),
+        setPageSize: vi.fn(),
+      } as any;
       const batch = [{id: 1}, {id: 2}];
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 

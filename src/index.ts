@@ -5,7 +5,7 @@ import {glob} from 'glob';
 import chalk from 'chalk';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import {ParquetWriter, ParquetSchema} from 'parquetjs';
+import {ParquetWriter, ParquetSchema} from '@dsnp/parquetjs';
 
 export interface ProcessingOptions {
   input: string;
@@ -108,7 +108,7 @@ export class JsonParquetMerger {
 
     // Infer schema from first record
     const sampleRecord = jsonData[0];
-    const schemaFields: Record<string, unknown> = {};
+    const schemaFields: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(sampleRecord)) {
       if (value === null) {
@@ -129,13 +129,13 @@ export class JsonParquetMerger {
       }
     }
 
-    this.inferredSchema = new ParquetSchema(schemaFields);
+    this.inferredSchema = new ParquetSchema(schemaFields as any);
   }
 
   private async validateSchema(records: JsonRecord[]): Promise<boolean> {
     if (!this.options.validate) return true;
 
-    const schemaKeys = Object.keys(this.inferredSchema.fields);
+    const schemaKeys = Object.keys(this.inferredSchema!.fields);
     let isValid = true;
     const validationErrors: string[] = [];
 
@@ -182,6 +182,9 @@ export class JsonParquetMerger {
   }
 
   private async processFiles(files: string[]): Promise<void> {
+    if (!this.inferredSchema) {
+      throw new Error('Schema not inferred');
+    }
     const writer = await ParquetWriter.openFile(
       this.inferredSchema,
       this.options.output,
@@ -251,7 +254,7 @@ export class JsonParquetMerger {
     batch: JsonRecord[],
   ): Promise<void> {
     for (const record of batch) {
-      await writer.appendRow(record);
+      await writer.appendRow(record as any);
     }
     this.processedCount += batch.length;
     console.log(chalk.gray(`   Wrote batch of ${batch.length} records`));

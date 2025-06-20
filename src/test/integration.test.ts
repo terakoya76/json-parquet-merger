@@ -1,12 +1,12 @@
 import * as fs from 'fs/promises';
-import {ParquetSchema, ParquetWriter} from 'parquetjs';
+import {ParquetWriter, ParquetSchema} from '@dsnp/parquetjs';
 import * as path from 'path';
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 
-import {JsonParquetMerger} from '../src/index';
+import {JsonParquetMerger} from '../index';
 
 // Mock only the ParquetWriter since we don't want to create actual Parquet files
-vi.mock('parquetjs', () => ({
+vi.mock('@dsnp/parquetjs', () => ({
   ParquetWriter: {
     openFile: vi.fn(),
   },
@@ -24,10 +24,7 @@ vi.mock('chalk', () => ({
 }));
 
 describe('JsonParquetMerger Integration Tests', () => {
-  let mockWriter: {
-    appendRow: ReturnType<typeof vi.fn>;
-    close: ReturnType<typeof vi.fn>;
-  };
+  let mockWriter: any;
   const testDataDir = path.resolve(__dirname, './data');
   const outputPath = path.join(testDataDir, './output/test.parquet');
 
@@ -38,7 +35,16 @@ describe('JsonParquetMerger Integration Tests', () => {
     mockWriter = {
       appendRow: vi.fn(),
       close: vi.fn(),
-    };
+      schema: {} as any,
+      envelopeWriter: null,
+      rowBuffer: {} as any,
+      rowGroupSize: 1000,
+      closed: false,
+      userMetadata: {},
+      setMetadata: vi.fn(),
+      setRowGroupSize: vi.fn(),
+      setPageSize: vi.fn(),
+    } as any;
 
     vi.mocked(ParquetWriter.openFile).mockResolvedValue(mockWriter);
     vi.clearAllMocks();
@@ -71,7 +77,7 @@ describe('JsonParquetMerger Integration Tests', () => {
       await merger.run();
 
       // Verify schema inference
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         timestamp: {type: 'UTF8', optional: true},
         event: {type: 'UTF8', optional: true},
         userId: {type: 'INT64', optional: true},
@@ -109,7 +115,7 @@ describe('JsonParquetMerger Integration Tests', () => {
       await merger.run();
 
       // Verify schema inference includes nested object as UTF8
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
         name: {type: 'UTF8', optional: true},
         age: {type: 'INT64', optional: true},
@@ -154,7 +160,7 @@ describe('JsonParquetMerger Integration Tests', () => {
       await merger.run();
 
       // Verify schema inference
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
         title: {type: 'UTF8', optional: true},
         value: {type: 'DOUBLE', optional: true},
@@ -199,7 +205,7 @@ describe('JsonParquetMerger Integration Tests', () => {
       await merger.run();
 
       // Verify schema inference for mixed types
-      expect(ParquetSchema).toHaveBeenCalledWith({
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
         name: {type: 'UTF8', optional: true},
         price: {type: 'DOUBLE', optional: true},
