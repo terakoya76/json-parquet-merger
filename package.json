@@ -19,7 +19,7 @@
   "dependencies": {
     "@dsnp/parquetjs": "^1.8.7",
     "chalk": "^5.3.0",
-    "commander": "^11.0.0",
+    "commander": "^14.0.0",
     "glob": "^10.3.0"
   },
   "devDependencies": {
