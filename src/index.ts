@@ -90,13 +90,42 @@ export class JsonParquetMerger {
   }
 
   private async inferSchema(files: string[]): Promise<void> {
-    try {
-      // Collect all unique field names and their types across all files
-      const schemaFields: Record<string, any> = {};
-      const allFields = new Set<string>();
+    // Collect all unique field names and their types across all files
+    const schemaFields: Record<string, any> = {};
+    const allFields = new Set<string>();
 
-      // First pass: collect all field names from all files
-      for (const file of files) {
+    // First pass: collect all field names from all files
+    for (const file of files) {
+      const content = await fs.readFile(file, 'utf-8');
+      let jsonData: JsonRecord[];
+
+      try {
+        const parsed = JSON.parse(content);
+        jsonData = Array.isArray(parsed) ? parsed : [parsed];
+      } catch (error) {
+        throw new Error(`Failed to parse JSON from ${file}: ${error}`);
+      }
+
+      if (jsonData.length === 0) {
+        continue; // Skip empty files
+      }
+
+      // Collect all field names from this file
+      for (const record of jsonData) {
+        Object.keys(record).forEach(key => allFields.add(key));
+      }
+    }
+
+    if (allFields.size === 0) {
+      throw new Error('No fields found in any of the input files');
+    }
+
+    // Second pass: for each field, find the first non-null value across all files
+    for (const fieldName of allFields) {
+      let inferredType = null;
+
+      // Search across all files until we find a non-null value for this field
+      fileLoop: for (const file of files) {
         const content = await fs.readFile(file, 'utf-8');
         let jsonData: JsonRecord[];
 
@@ -104,81 +133,43 @@ export class JsonParquetMerger {
           const parsed = JSON.parse(content);
           jsonData = Array.isArray(parsed) ? parsed : [parsed];
         } catch (error) {
-          throw new Error(`Failed to parse JSON from ${file}: ${error}`);
+          continue; // Skip files that can't be parsed
         }
 
-        if (jsonData.length === 0) {
-          continue; // Skip empty files
-        }
-
-        // Collect all field names from this file
         for (const record of jsonData) {
-          Object.keys(record).forEach(key => allFields.add(key));
-        }
-      }
-
-      if (allFields.size === 0) {
-        throw new Error('No fields found in any of the input files');
-      }
-
-      // Second pass: for each field, find the first non-null value across all files
-      for (const fieldName of allFields) {
-        let inferredType = null;
-
-        // Search across all files until we find a non-null value for this field
-        fileLoop: for (const file of files) {
-          const content = await fs.readFile(file, 'utf-8');
-          let jsonData: JsonRecord[];
-
-          try {
-            const parsed = JSON.parse(content);
-            jsonData = Array.isArray(parsed) ? parsed : [parsed];
-          } catch (error) {
-            continue; // Skip files that can't be parsed
-          }
-
-          for (const record of jsonData) {
-            const value = record[fieldName];
-            if (value !== null && value !== undefined) {
-              if (typeof value === 'string') {
-                inferredType = {type: 'UTF8', optional: true};
-                break fileLoop;
-              } else if (typeof value === 'number') {
-                inferredType = Number.isInteger(value)
-                  ? {type: 'INT64', optional: true}
-                  : {type: 'DOUBLE', optional: true};
-                break fileLoop;
-              } else if (typeof value === 'boolean') {
-                inferredType = {type: 'BOOLEAN', optional: true};
-                break fileLoop;
-              } else if (value instanceof Date) {
-                inferredType = {type: 'TIMESTAMP_MILLIS', optional: true};
-                break fileLoop;
-              } else {
-                // Convert objects/arrays to JSON strings
-                inferredType = {type: 'UTF8', optional: true};
-                break fileLoop;
-              }
+          const value = record[fieldName];
+          if (value !== null && value !== undefined) {
+            if (typeof value === 'string') {
+              inferredType = {type: 'UTF8', optional: true};
+              break fileLoop;
+            } else if (typeof value === 'number') {
+              inferredType = Number.isInteger(value)
+                ? {type: 'INT64', optional: true}
+                : {type: 'DOUBLE', optional: true};
+              break fileLoop;
+            } else if (typeof value === 'boolean') {
+              inferredType = {type: 'BOOLEAN', optional: true};
+              break fileLoop;
+            } else if (value instanceof Date) {
+              inferredType = {type: 'TIMESTAMP_MILLIS', optional: true};
+              break fileLoop;
+            } else {
+              // Convert objects/arrays to JSON strings
+              inferredType = {type: 'UTF8', optional: true};
+              break fileLoop;
             }
           }
         }
-
-        // If all values are null across all files, default to UTF8
-        schemaFields[fieldName] = inferredType || {
-          type: 'UTF8',
-          optional: true,
-        };
       }
 
-      this.inferredSchema = new ParquetSchema(schemaFields);
-    } catch (error) {
-      console.error(
-        chalk.red(
-          `❌ Error in inferSchema() for files: ${Array.isArray(files) ? files.join(', ') : files}`,
-        ),
-      );
-      throw error;
+      // If all values are null across all files, default to UTF8
+      schemaFields[fieldName] = inferredType || {
+        type: 'UTF8',
+        optional: true,
+      };
     }
+
+    this.inferredSchema = new ParquetSchema(schemaFields);
   }
 
   private async validateSchema(records: JsonRecord[]): Promise<boolean> {
@@ -239,12 +230,10 @@ export class JsonParquetMerger {
       this.options.output,
     );
     let currentBatch: JsonRecord[] = [];
-    let currentFile = '';
 
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        currentFile = file;
 
         console.log(
           chalk.blue(`📄 Processing file ${i + 1}/${files.length}: ${file}`),
@@ -294,9 +283,6 @@ export class JsonParquetMerger {
       if (currentBatch.length > 0) {
         await this.writeBatch(writer, currentBatch);
       }
-    } catch (error) {
-      console.error(chalk.red(`❌ Error processing file: ${currentFile}`));
-      throw error;
     } finally {
       await writer.close();
     }
