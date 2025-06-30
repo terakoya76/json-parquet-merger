@@ -90,44 +90,51 @@ export class JsonParquetMerger {
   }
 
   private async inferSchema(filePath: string): Promise<void> {
-    const content = await fs.readFile(filePath, 'utf-8');
-    let jsonData: JsonRecord[];
-
     try {
-      const parsed = JSON.parse(content);
-      jsonData = Array.isArray(parsed) ? parsed : [parsed];
-    } catch (error) {
-      throw new Error(`Failed to parse JSON from ${filePath}: ${error}`);
-    }
+      const content = await fs.readFile(filePath, 'utf-8');
+      let jsonData: JsonRecord[];
 
-    if (jsonData.length === 0) {
-      throw new Error(`No data found in ${filePath}`);
-    }
-
-    // Infer schema from first record
-    const sampleRecord = jsonData[0];
-    const schemaFields: Record<string, any> = {};
-
-    for (const [key, value] of Object.entries(sampleRecord)) {
-      if (value === null) {
-        schemaFields[key] = {type: 'UTF8', optional: true};
-      } else if (typeof value === 'string') {
-        schemaFields[key] = {type: 'UTF8', optional: true};
-      } else if (typeof value === 'number') {
-        schemaFields[key] = Number.isInteger(value)
-          ? {type: 'INT64', optional: true}
-          : {type: 'DOUBLE', optional: true};
-      } else if (typeof value === 'boolean') {
-        schemaFields[key] = {type: 'BOOLEAN', optional: true};
-      } else if (value instanceof Date) {
-        schemaFields[key] = {type: 'TIMESTAMP_MILLIS', optional: true};
-      } else {
-        // Convert objects/arrays to JSON strings
-        schemaFields[key] = {type: 'UTF8', optional: true};
+      try {
+        const parsed = JSON.parse(content);
+        jsonData = Array.isArray(parsed) ? parsed : [parsed];
+      } catch (error) {
+        throw new Error(`Failed to parse JSON from ${filePath}: ${error}`);
       }
-    }
 
-    this.inferredSchema = new ParquetSchema(schemaFields as any);
+      if (jsonData.length === 0) {
+        throw new Error(`No data found in ${filePath}`);
+      }
+
+      // Infer schema from first record
+      const sampleRecord = jsonData[0];
+      const schemaFields: Record<string, any> = {};
+
+      for (const [key, value] of Object.entries(sampleRecord)) {
+        if (value === null) {
+          schemaFields[key] = {type: 'UTF8', optional: true};
+        } else if (typeof value === 'string') {
+          schemaFields[key] = {type: 'UTF8', optional: true};
+        } else if (typeof value === 'number') {
+          schemaFields[key] = Number.isInteger(value)
+            ? {type: 'INT64', optional: true}
+            : {type: 'DOUBLE', optional: true};
+        } else if (typeof value === 'boolean') {
+          schemaFields[key] = {type: 'BOOLEAN', optional: true};
+        } else if (value instanceof Date) {
+          schemaFields[key] = {type: 'TIMESTAMP_MILLIS', optional: true};
+        } else {
+          // Convert objects/arrays to JSON strings
+          schemaFields[key] = {type: 'UTF8', optional: true};
+        }
+      }
+
+      this.inferredSchema = new ParquetSchema(schemaFields as any);
+    } catch (error) {
+      console.error(
+        chalk.red(`❌ Error in inferSchema() for file: ${filePath}`),
+      );
+      throw error;
+    }
   }
 
   private async validateSchema(records: JsonRecord[]): Promise<boolean> {
