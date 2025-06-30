@@ -162,7 +162,7 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
       });
-      await merger['inferSchema']('/test/file.json');
+      await merger['inferSchema'](['/test/file.json']);
       expect(merger['inferredSchema']).toBeDefined();
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
@@ -184,7 +184,7 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
       });
-      await merger['inferSchema']('/test/file.json');
+      await merger['inferSchema'](['/test/file.json']);
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
@@ -209,7 +209,7 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
       });
-      await merger['inferSchema']('/test/file.json');
+      await merger['inferSchema'](['/test/file.json']);
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         id: {type: 'INT64', optional: true},
@@ -238,7 +238,7 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
       });
-      await merger['inferSchema']('/test/file.json');
+      await merger['inferSchema'](['/test/file.json']);
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
         stringField: {type: 'UTF8', optional: true},
@@ -248,6 +248,61 @@ describe('JsonParquetMerger', () => {
         nullField: {type: 'UTF8', optional: true},
         dateField: {type: 'UTF8', optional: true}, // ISO string, not Date object
         objectField: {type: 'UTF8', optional: true},
+      });
+    });
+
+    it('should correctly infer INT64 type when first value is null and subsequent values are numbers', async () => {
+      vol.fromJSON({
+        '/test/file.json': JSON.stringify([
+          {id: 1, score: null, name: 'John'},
+          {id: 2, score: 85, name: 'Jane'},
+          {id: 3, score: 92, name: 'Bob'},
+        ]),
+      });
+
+      const merger = new JsonParquetMerger({
+        input: '/test/input',
+        output: '/test/output.parquet',
+        validate: false,
+        batchSize: 1000,
+      });
+      await merger['inferSchema'](['/test/file.json']);
+
+      // This test verifies the fix: score should be INT64 even when first record has null
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
+        id: {type: 'INT64', optional: true},
+        score: {type: 'INT64', optional: true},
+        name: {type: 'UTF8', optional: true},
+      });
+    });
+
+    it('should correctly infer types across multiple files when first file has all null values', async () => {
+      vol.fromJSON({
+        '/test/file1.json': JSON.stringify([
+          {id: 1, score: null, active: null, name: 'John'},
+          {id: 2, score: null, active: null, name: 'Jane'},
+        ]),
+        '/test/file2.json': JSON.stringify([
+          {id: 3, score: 85.5, active: true, name: 'Bob'},
+          {id: 4, score: 92, active: false, name: 'Alice'},
+        ]),
+      });
+
+      const merger = new JsonParquetMerger({
+        input: '/test/input',
+        output: '/test/output.parquet',
+        validate: false,
+        batchSize: 1000,
+      });
+      await merger['inferSchema'](['/test/file1.json', '/test/file2.json']);
+
+      // This test verifies the cross-file fix: types should be inferred from file2
+      // even when file1 has all null values
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
+        id: {type: 'INT64', optional: true},
+        score: {type: 'DOUBLE', optional: true}, // 85.5 is a double
+        active: {type: 'BOOLEAN', optional: true},
+        name: {type: 'UTF8', optional: true},
       });
     });
 
@@ -262,7 +317,7 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
       });
-      await expect(merger['inferSchema']('/test/file.json')).rejects.toThrow(
+      await expect(merger['inferSchema'](['/test/file.json'])).rejects.toThrow(
         'Failed to parse JSON from /test/file.json',
       );
     });
@@ -278,8 +333,8 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
       });
-      await expect(merger['inferSchema']('/test/file.json')).rejects.toThrow(
-        'No data found in /test/file.json',
+      await expect(merger['inferSchema'](['/test/file.json'])).rejects.toThrow(
+        'No fields found in any of the input files',
       );
     });
   });
