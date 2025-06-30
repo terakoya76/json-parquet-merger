@@ -128,7 +128,7 @@ export class JsonParquetMerger {
         }
       }
 
-      this.inferredSchema = new ParquetSchema(schemaFields as any);
+      this.inferredSchema = new ParquetSchema(schemaFields);
     } catch (error) {
       console.error(
         chalk.red(`❌ Error in inferSchema() for file: ${filePath}`),
@@ -265,7 +265,7 @@ export class JsonParquetMerger {
     batch: JsonRecord[],
   ): Promise<void> {
     for (const record of batch) {
-      await writer.appendRow(record as any);
+      await writer.appendRow(record);
     }
     this.processedCount += batch.length;
     console.log(chalk.gray(`   Wrote batch of ${batch.length} records`));
