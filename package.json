@@ -1,6 +1,6 @@
 {
   "name": "json-parquet-merger",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "TypeScript CLI tool for merging multiple JSON files of the same format into a single Parquet file",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
