@@ -188,10 +188,13 @@ export class JsonParquetMerger {
       this.options.output,
     );
     let currentBatch: JsonRecord[] = [];
+    let currentFile = '';
 
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        currentFile = file;
+
         console.log(
           chalk.blue(
             `📄 Processing file ${i + 1}/${files.length}: ${path.basename(file)}`,
@@ -242,6 +245,9 @@ export class JsonParquetMerger {
       if (currentBatch.length > 0) {
         await this.writeBatch(writer, currentBatch);
       }
+    } catch (error) {
+      console.error(chalk.red(`❌ Error processing file: ${currentFile}`));
+      throw error;
     } finally {
       await writer.close();
     }

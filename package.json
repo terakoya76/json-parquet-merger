@@ -13,8 +13,9 @@
     "clean": "gts clean",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "pnpm lint:gts",
-    "lint:gts": "gts fix"
+    "lint": "pnpm lint:gts && pnpm lint:tsr",
+    "lint:gts": "gts fix",
+    "lint:tsr": "tsr -w ./src ./script"
   },
   "dependencies": {
     "@dsnp/parquetjs": "^1.8.7",
