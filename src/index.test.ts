@@ -2,7 +2,7 @@ import {vol} from 'memfs';
 import {ParquetSchema} from '@dsnp/parquetjs';
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 
-import {JsonParquetMerger} from './index';
+import {JsonParquetMerger, CompressionType} from './index';
 
 // Mock external dependencies before importing the module under test
 vi.mock('fs/promises', () => import('memfs').then(({fs}) => fs.promises));
@@ -535,6 +535,88 @@ describe('JsonParquetMerger', () => {
       );
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('compression options', () => {
+    it('should use UNCOMPRESSED compression by default', async () => {
+      vol.fromJSON({
+        '/test/file.json': JSON.stringify([{id: 1, name: 'test'}]),
+      });
+
+      const merger = new JsonParquetMerger({
+        input: '/test/input',
+        output: '/test/output.parquet',
+        validate: false,
+        batchSize: 1000,
+        compression: 'UNCOMPRESSED' as CompressionType,
+      });
+      await merger['inferSchema'](['/test/file.json']);
+
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
+        id: {type: 'INT64', compression: 'UNCOMPRESSED', optional: true},
+        name: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
+      });
+    });
+
+    it('should use GZIP compression when specified', async () => {
+      vol.fromJSON({
+        '/test/file.json': JSON.stringify([{id: 1, name: 'test'}]),
+      });
+
+      const merger = new JsonParquetMerger({
+        input: '/test/input',
+        output: '/test/output.parquet',
+        validate: false,
+        batchSize: 1000,
+        compression: 'GZIP' as CompressionType,
+      });
+      await merger['inferSchema'](['/test/file.json']);
+
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
+        id: {type: 'INT64', compression: 'GZIP', optional: true},
+        name: {type: 'UTF8', compression: 'GZIP', optional: true},
+      });
+    });
+
+    it('should use SNAPPY compression when specified', async () => {
+      vol.fromJSON({
+        '/test/file.json': JSON.stringify([{id: 1, name: 'test'}]),
+      });
+
+      const merger = new JsonParquetMerger({
+        input: '/test/input',
+        output: '/test/output.parquet',
+        validate: false,
+        batchSize: 1000,
+        compression: 'SNAPPY' as CompressionType,
+      });
+      await merger['inferSchema'](['/test/file.json']);
+
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
+        id: {type: 'INT64', compression: 'SNAPPY', optional: true},
+        name: {type: 'UTF8', compression: 'SNAPPY', optional: true},
+      });
+    });
+
+    it('should use BROTLI compression when specified', async () => {
+      vol.fromJSON({
+        '/test/file.json': JSON.stringify([{id: 1, name: 'test'}]),
+      });
+
+      const merger = new JsonParquetMerger({
+        input: '/test/input',
+        output: '/test/output.parquet',
+        validate: false,
+        batchSize: 1000,
+        compression: 'BROTLI' as CompressionType,
+      });
+      await merger['inferSchema'](['/test/file.json']);
+
+      expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
+        id: {type: 'INT64', compression: 'BROTLI', optional: true},
+        name: {type: 'UTF8', compression: 'BROTLI', optional: true},
+      });
     });
   });
 });

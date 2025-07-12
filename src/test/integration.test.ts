@@ -3,7 +3,7 @@ import {ParquetWriter, ParquetSchema} from '@dsnp/parquetjs';
 import * as path from 'path';
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 
-import {JsonParquetMerger} from '../index';
+import {JsonParquetMerger, CompressionType} from '../index';
 
 // Mock only the ParquetWriter since we don't want to create actual Parquet files
 vi.mock('@dsnp/parquetjs', () => ({
@@ -73,14 +73,15 @@ describe('JsonParquetMerger Integration Tests', () => {
         pattern: 'data\\d+',
         validate: false,
         batchSize: 2,
+        compression: 'UNCOMPRESSED' as CompressionType,
       });
       await merger.run();
 
       // Verify schema inference
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        timestamp: {type: 'UTF8', optional: true},
-        event: {type: 'UTF8', optional: true},
-        userId: {type: 'INT64', optional: true},
+        timestamp: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
+        event: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
+        userId: {type: 'INT64', compression: 'UNCOMPRESSED', optional: true},
       });
 
       // Verify data processing
@@ -111,16 +112,17 @@ describe('JsonParquetMerger Integration Tests', () => {
         output: outputPath,
         validate: false,
         batchSize: 10,
+        compression: 'UNCOMPRESSED' as CompressionType,
       });
       await merger.run();
 
       // Verify schema inference includes nested object as UTF8
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        name: {type: 'UTF8', optional: true},
-        age: {type: 'INT64', optional: true},
-        active: {type: 'BOOLEAN', optional: true},
-        metadata: {type: 'UTF8', optional: true},
+        id: {type: 'INT64', compression: 'UNCOMPRESSED', optional: true},
+        name: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
+        age: {type: 'INT64', compression: 'UNCOMPRESSED', optional: true},
+        active: {type: 'BOOLEAN', compression: 'UNCOMPRESSED', optional: true},
+        metadata: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
       });
 
       // Verify data processing
@@ -156,15 +158,16 @@ describe('JsonParquetMerger Integration Tests', () => {
         output: outputPath,
         validate: false,
         batchSize: 1,
+        compression: 'UNCOMPRESSED' as CompressionType,
       });
       await merger.run();
 
       // Verify schema inference
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        title: {type: 'UTF8', optional: true},
-        value: {type: 'DOUBLE', optional: true},
-        active: {type: 'BOOLEAN', optional: true},
+        id: {type: 'INT64', compression: 'UNCOMPRESSED', optional: true},
+        title: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
+        value: {type: 'DOUBLE', compression: 'UNCOMPRESSED', optional: true},
+        active: {type: 'BOOLEAN', compression: 'UNCOMPRESSED', optional: true},
       });
 
       // Verify data processing
@@ -186,6 +189,7 @@ describe('JsonParquetMerger Integration Tests', () => {
         output: outputPath,
         validate: true,
         batchSize: 10,
+        compression: 'UNCOMPRESSED' as CompressionType,
       });
 
       // The merger will try to create a Parquet file with zero rows, which will fail
@@ -201,16 +205,21 @@ describe('JsonParquetMerger Integration Tests', () => {
         output: outputPath,
         validate: false,
         batchSize: 5,
+        compression: 'UNCOMPRESSED' as CompressionType,
       });
       await merger.run();
 
       // Verify schema inference for mixed types
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        name: {type: 'UTF8', optional: true},
-        price: {type: 'DOUBLE', optional: true},
-        available: {type: 'BOOLEAN', optional: true},
-        specs: {type: 'UTF8', optional: true},
+        id: {type: 'INT64', compression: 'UNCOMPRESSED', optional: true},
+        name: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
+        price: {type: 'DOUBLE', compression: 'UNCOMPRESSED', optional: true},
+        available: {
+          type: 'BOOLEAN',
+          compression: 'UNCOMPRESSED',
+          optional: true,
+        },
+        specs: {type: 'UTF8', compression: 'UNCOMPRESSED', optional: true},
       });
 
       // Verify data processing
@@ -250,6 +259,7 @@ describe('JsonParquetMerger Integration Tests', () => {
         output: outputPath,
         validate: false,
         batchSize: 10,
+        compression: 'UNCOMPRESSED' as CompressionType,
       });
 
       await expect(merger.run()).rejects.toThrow();

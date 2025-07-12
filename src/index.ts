@@ -5,12 +5,15 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import {ParquetWriter, ParquetSchema} from '@dsnp/parquetjs';
 
+export type CompressionType = 'uncompressed' | 'gzip' | 'snappy' | 'brotli';
+
 export interface ProcessingOptions {
   input: string;
   output: string;
   pattern?: string;
   validate: boolean;
   batchSize: number;
+  compression: CompressionType;
 }
 
 export interface JsonRecord {
@@ -140,22 +143,46 @@ export class JsonParquetMerger {
           const value = record[fieldName];
           if (value !== null && value !== undefined) {
             if (typeof value === 'string') {
-              inferredType = {type: 'UTF8', optional: true};
+              inferredType = {
+                type: 'UTF8',
+                compression: this.options.compression,
+                optional: true,
+              };
               break fileLoop;
             } else if (typeof value === 'number') {
               inferredType = Number.isInteger(value)
-                ? {type: 'INT64', optional: true}
-                : {type: 'DOUBLE', optional: true};
+                ? {
+                    type: 'INT64',
+                    compression: this.options.compression,
+                    optional: true,
+                  }
+                : {
+                    type: 'DOUBLE',
+                    compression: this.options.compression,
+                    optional: true,
+                  };
               break fileLoop;
             } else if (typeof value === 'boolean') {
-              inferredType = {type: 'BOOLEAN', optional: true};
+              inferredType = {
+                type: 'BOOLEAN',
+                compression: this.options.compression,
+                optional: true,
+              };
               break fileLoop;
             } else if (value instanceof Date) {
-              inferredType = {type: 'TIMESTAMP_MILLIS', optional: true};
+              inferredType = {
+                type: 'TIMESTAMP_MILLIS',
+                compression: this.options.compression,
+                optional: true,
+              };
               break fileLoop;
             } else {
               // Convert objects/arrays to JSON strings
-              inferredType = {type: 'UTF8', optional: true};
+              inferredType = {
+                type: 'UTF8',
+                compression: this.options.compression,
+                optional: true,
+              };
               break fileLoop;
             }
           }
@@ -165,6 +192,7 @@ export class JsonParquetMerger {
       // If all values are null across all files, default to UTF8
       schemaFields[fieldName] = inferredType || {
         type: 'UTF8',
+        compression: this.options.compression,
         optional: true,
       };
     }
@@ -320,6 +348,11 @@ async function main(): Promise<void> {
       '-b, --batch-size <number>',
       'Batch size for processing records',
       '1000',
+    )
+    .option(
+      '-c, --compression <type>',
+      'Compression type: uncompressed, gzip, snappy, brotli',
+      'uncompressed',
     );
 
   program.parse();
@@ -332,6 +365,25 @@ async function main(): Promise<void> {
     console.error(chalk.red('❌ Batch size must be a positive number'));
     throw new Error('Invalid batch size');
   }
+
+  // Normalize and validate compression option
+  const compressionMap: Record<string, CompressionType> = {
+    uncompressed: 'UNCOMPRESSED',
+    gzip: 'GZIP',
+    snappy: 'SNAPPY',
+    brotli: 'BROTLI',
+  };
+
+  const compression = options.compression;
+  if (!compressionMap[compression]) {
+    console.error(
+      chalk.red(
+        `❌ Invalid compression type: ${options.compression}. Valid options: uncompressed, gzip, snappy, brotli`,
+      ),
+    );
+    throw new Error('Invalid compression type');
+  }
+  options.compression = compressionMap[compression];
 
   // Validate output directory exists
   const outputDir = path.dirname(options.output);
