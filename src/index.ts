@@ -5,7 +5,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import {ParquetWriter, ParquetSchema} from '@dsnp/parquetjs';
 
-export type CompressionType = 'uncompressed' | 'gzip' | 'snappy' | 'brotli';
+export type CompressionType = 'UNCOMPRESSED' | 'GZIP' | 'SNAPPY' | 'BROTLI';
 
 export interface ProcessingOptions {
   input: string;

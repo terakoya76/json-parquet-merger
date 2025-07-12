@@ -43,6 +43,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       };
       const merger = new JsonParquetMerger(mockOptions);
       expect(merger).toBeDefined();
@@ -64,6 +65,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       const result = await merger['discoverFiles']();
       expect(result).toEqual(['/test/input.json']);
@@ -82,6 +84,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
 
       const {glob} = await import('glob');
@@ -107,6 +110,7 @@ describe('JsonParquetMerger', () => {
         validate: false,
         batchSize: 1000,
         pattern: 'data\\d+',
+        compression: 'UNCOMPRESSED' as const,
       };
       const patternMerger = new JsonParquetMerger(patternOptions);
 
@@ -138,6 +142,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
 
       // Don't create the path in memfs, so it doesn't exist
@@ -161,15 +166,16 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await merger['inferSchema'](['/test/file.json']);
       expect(merger['inferredSchema']).toBeDefined();
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        name: {type: 'UTF8', optional: true},
-        age: {type: 'INT64', optional: true},
-        active: {type: 'BOOLEAN', optional: true},
+        id: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        name: {type: 'UTF8', optional: true, compression: 'UNCOMPRESSED'},
+        age: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        active: {type: 'BOOLEAN', optional: true, compression: 'UNCOMPRESSED'},
       });
     });
 
@@ -183,13 +189,14 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await merger['inferSchema'](['/test/file.json']);
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        name: {type: 'UTF8', optional: true},
-        value: {type: 'INT64', optional: true},
+        id: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        name: {type: 'UTF8', optional: true, compression: 'UNCOMPRESSED'},
+        value: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
       });
     });
 
@@ -208,12 +215,13 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await merger['inferSchema'](['/test/file.json']);
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        metadata: {type: 'UTF8', optional: true},
+        id: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        metadata: {type: 'UTF8', optional: true, compression: 'UNCOMPRESSED'},
       });
     });
 
@@ -237,17 +245,34 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await merger['inferSchema'](['/test/file.json']);
 
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        stringField: {type: 'UTF8', optional: true},
-        intField: {type: 'INT64', optional: true},
-        floatField: {type: 'DOUBLE', optional: true},
-        boolField: {type: 'BOOLEAN', optional: true},
-        nullField: {type: 'UTF8', optional: true},
-        dateField: {type: 'UTF8', optional: true}, // ISO string, not Date object
-        objectField: {type: 'UTF8', optional: true},
+        stringField: {
+          type: 'UTF8',
+          optional: true,
+          compression: 'UNCOMPRESSED',
+        },
+        intField: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        floatField: {
+          type: 'DOUBLE',
+          optional: true,
+          compression: 'UNCOMPRESSED',
+        },
+        boolField: {
+          type: 'BOOLEAN',
+          optional: true,
+          compression: 'UNCOMPRESSED',
+        },
+        nullField: {type: 'UTF8', optional: true, compression: 'UNCOMPRESSED'},
+        dateField: {type: 'UTF8', optional: true, compression: 'UNCOMPRESSED'}, // ISO string, not Date object
+        objectField: {
+          type: 'UTF8',
+          optional: true,
+          compression: 'UNCOMPRESSED',
+        },
       });
     });
 
@@ -265,14 +290,15 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await merger['inferSchema'](['/test/file.json']);
 
       // This test verifies the fix: score should be INT64 even when first record has null
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        score: {type: 'INT64', optional: true},
-        name: {type: 'UTF8', optional: true},
+        id: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        score: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        name: {type: 'UTF8', optional: true, compression: 'UNCOMPRESSED'},
       });
     });
 
@@ -293,16 +319,17 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await merger['inferSchema'](['/test/file1.json', '/test/file2.json']);
 
       // This test verifies the cross-file fix: types should be inferred from file2
       // even when file1 has all null values
       expect(vi.mocked(ParquetSchema)).toHaveBeenCalledWith({
-        id: {type: 'INT64', optional: true},
-        score: {type: 'DOUBLE', optional: true}, // 85.5 is a double
-        active: {type: 'BOOLEAN', optional: true},
-        name: {type: 'UTF8', optional: true},
+        id: {type: 'INT64', optional: true, compression: 'UNCOMPRESSED'},
+        score: {type: 'DOUBLE', optional: true, compression: 'UNCOMPRESSED'}, // 85.5 is a double
+        active: {type: 'BOOLEAN', optional: true, compression: 'UNCOMPRESSED'},
+        name: {type: 'UTF8', optional: true, compression: 'UNCOMPRESSED'},
       });
     });
 
@@ -316,6 +343,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await expect(merger['inferSchema'](['/test/file.json'])).rejects.toThrow(
         'Failed to parse JSON from /test/file.json',
@@ -332,6 +360,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await expect(merger['inferSchema'](['/test/file.json'])).rejects.toThrow(
         'No fields found in any of the input files',
@@ -346,6 +375,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       merger['inferredSchema'] = new ParquetSchema({
         id: {type: 'INT64', optional: true},
@@ -362,6 +392,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: true,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       merger['inferredSchema'] = new ParquetSchema({
         id: {type: 'INT64', optional: true},
@@ -378,6 +409,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: true,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       merger['inferredSchema'] = new ParquetSchema({
         id: {type: 'INT64', optional: true},
@@ -395,6 +427,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: true,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       merger['inferredSchema'] = new ParquetSchema({
         id: {type: 'INT64', optional: true},
@@ -412,6 +445,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: true,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       merger['inferredSchema'] = new ParquetSchema({
         id: {type: 'INT64', optional: true},
@@ -434,6 +468,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
 
       const result = merger['transformRecord']({
@@ -454,6 +489,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
 
       const result = merger['transformRecord']({
@@ -474,6 +510,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
 
       const date = new Date('2023-01-01');
@@ -487,6 +524,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
 
       const record = {
@@ -523,6 +561,7 @@ describe('JsonParquetMerger', () => {
         output: '/test/output.parquet',
         validate: false,
         batchSize: 1000,
+        compression: 'UNCOMPRESSED' as const,
       });
       await merger['writeBatch'](mockWriter, batch);
 
