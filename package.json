@@ -9,7 +9,7 @@
     "json-parquet-merger": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x ./dist/index.js",
     "cli": "tsx src/index.ts",
     "clean": "gts clean",
     "test": "vitest run",
