@@ -403,7 +403,5 @@ async function main(): Promise<void> {
   await merger.run();
 }
 
-// Check if this file is being run directly
-if (import.meta.url === new URL(process.argv[1], 'file:').href) {
-  main().catch(console.error);
-}
+// Always execute main when this module is loaded as a binary
+main().catch(console.error);
