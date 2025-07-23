@@ -403,6 +403,7 @@ async function main(): Promise<void> {
   await merger.run();
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Check if this file is being run directly
+if (import.meta.url === new URL(process.argv[1], 'file:').href) {
   main().catch(console.error);
 }
