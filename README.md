@@ -5,11 +5,27 @@ A TypeScript CLI tool that merges multiple JSON files of the same format into a 
 ## Features
 
 - 🚀 Fast processing and batch processing support
-- 📊 Automatic schema inference
+- 📊 Automatic schema inference from all input files
 - ✅ Schema validation option
-- 🔍 File pattern filtering
-- 📝 Detailed progress display
+- 🔍 File pattern filtering with regex support
+- 📝 Detailed progress display with real-time feedback
 - 🛠️ Customizable batch size
+- 🗜️ Multiple compression options (uncompressed, gzip, snappy, brotli)
+- 📁 Support for both single files and directory processing
+- 🔄 Robust error handling and file validation
+
+## Installation
+
+```bash
+# Install globally
+npm install -g json-parquet-merger
+
+# Or install locally with pnpm (recommended for development)
+pnpm install json-parquet-merger
+
+# Or using npm
+npm install json-parquet-merger
+```
 
 ## Usage
 
@@ -25,21 +41,23 @@ json-parquet-merger -i data.json -o output.parquet
 ### Options
 
 ```bash
-bashjson-parquet-merger [options]
+json-parquet-merger [options]
 
 Options:
-  -i, --input <path>      Input directory or file path (required)
-  -o, --output <path>     Output Parquet file path (required)
-  -p, --pattern <regex>   Regular expression for filtering JSON files
-  --validate              Verify that all records have the same schema
-  -b, --batch-size <num>  Batch size for processing records (default: 1000)
-  -h, --help              Display help
+  -i, --input <path>           Input directory or file path (required)
+  -o, --output <path>          Output Parquet file path (required)
+  -p, --pattern <regex>        Regular expression for filtering JSON files
+  --validate                   Verify that all records have the same schema
+  -b, --batch-size <number>    Batch size for processing records (default: 1000)
+  -c, --compression <type>     Compression type: uncompressed, gzip, snappy, brotli (default: uncompressed)
+  -V, --version                Display version number
+  -h, --help                   Display help information
 ```
 
 ### Usage examples
 ```bash
 # Pattern filtering
-json-parquet-merger -i ./data -o users.parquet -p “user_.*\\.json”
+json-parquet-merger -i ./data -o users.parquet -p "user_.*\\.json"
 
 # Run with schema validation enabled
 json-parquet-merger -i ./data -o output.parquet --validate
@@ -47,15 +65,28 @@ json-parquet-merger -i ./data -o output.parquet --validate
 # Custom batch size
 json-parquet-merger -i ./data -o output.parquet -b 5000
 
-# Display help and samples
-json-parquet-merger help
+# With compression
+json-parquet-merger -i ./data -o output.parquet -c gzip
+
+# Combined options
+json-parquet-merger -i ./data -o output.parquet -p "user_.*\\.json" --validate -b 2000 -c snappy
+
+# Display help
+json-parquet-merger --help
+
+# Show version
+json-parquet-merger --version
 ```
 
 ### Input JSON file requirements
 
-- All JSON files must have the same schema (same key structure).
-- JSON files can be written in array format or single object format.
-- Nested objects are stored as JSON strings.
+- JSON files can contain data with any schema structure
+- Schema is automatically inferred from all input files (not just the first one)
+- JSON files can be written in array format or single object format
+- Missing fields in some files are automatically handled (marked as optional)
+- Nested objects and arrays are automatically converted to JSON strings
+- All field types are auto-detected: string, number (int64/double), boolean, timestamps
+- Complex objects/arrays are serialized to JSON strings for storage
 
 ### Sample JSON File
 
@@ -94,3 +125,25 @@ user2.json:
   }
 ]
 ```
+
+## Schema Inference
+
+### Supported Data Types
+
+| JSON Type | Parquet Type | Notes |
+|-----------|--------------|-------|
+| `string` | `UTF8` | Text data |
+| `integer` | `INT64` | Whole numbers |
+| `float` | `DOUBLE` | Decimal numbers |
+| `boolean` | `BOOLEAN` | true/false values |
+| `Date` | `TIMESTAMP_MILLIS` | Date objects |
+| `object/array` | `UTF8` | Serialized as JSON strings |
+
+## Compression Options
+
+The tool supports multiple compression algorithms:
+
+- **uncompressed** (default): No compression, fastest processing
+- **gzip**: Good compression ratio, moderate speed
+- **snappy**: Fast compression with reasonable ratio
+- **brotli**: Best compression ratio, slower processing
