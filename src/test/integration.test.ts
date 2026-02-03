@@ -14,6 +14,27 @@ import {
 import {JsonParquetMerger, CompressionType} from '../index';
 
 /**
+ * Schema field definition for Parquet schema.
+ */
+interface SchemaFieldDefinition {
+  type: string;
+  compression: string;
+  optional: boolean;
+}
+
+/**
+ * Record of field names to their schema definitions.
+ */
+type SchemaFields = Record<string, SchemaFieldDefinition>;
+
+/**
+ * Mock ParquetSchema instance shape.
+ */
+interface MockParquetSchema {
+  fields: SchemaFields;
+}
+
+/**
  * Type for a mocked ParquetWriter where methods are replaced with mock instances.
  * This provides proper typing while allowing the object to be used where ParquetWriter is expected.
  */
@@ -50,7 +71,12 @@ vi.mock('@dsnp/parquetjs', () => ({
   ParquetWriter: {
     openFile: vi.fn(),
   },
-  ParquetSchema: vi.fn().mockImplementation(fields => ({fields})),
+  ParquetSchema: vi.fn().mockImplementation(function (
+    this: MockParquetSchema,
+    fields: SchemaFields,
+  ) {
+    this.fields = fields;
+  }),
 }));
 
 vi.mock('chalk', () => ({

@@ -17,7 +17,9 @@
       "Bash(pnpm add:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm search:*)",
-      "Bash(npx vitest run:*)"
+      "Bash(pnpm tsx:*)",
+      "Bash(pnpm vitest run:*)",
+      "Bash(tsx src/index.ts:*)"
     ],
     "deny": [
       "Bash(curl:*)"
