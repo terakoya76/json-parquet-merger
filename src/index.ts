@@ -5,7 +5,7 @@ import {glob} from 'glob';
 import chalk from 'chalk';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import {ParquetWriter, ParquetSchema} from '@dsnp/parquetjs';
+import {ParquetWriter, ParquetSchema, FieldDefinition} from '@dsnp/parquetjs';
 
 export type CompressionType = 'UNCOMPRESSED' | 'GZIP' | 'SNAPPY' | 'BROTLI';
 
@@ -96,7 +96,7 @@ export class JsonParquetMerger {
 
   private async inferSchema(files: string[]): Promise<void> {
     // Collect all unique field names and their types across all files
-    const schemaFields: Record<string, any> = {};
+    const schemaFields: Record<string, FieldDefinition> = {};
     const allFields = new Set<string>();
 
     // First pass: collect all field names from all files
@@ -127,7 +127,7 @@ export class JsonParquetMerger {
 
     // Second pass: for each field, find the first non-null value across all files
     for (const fieldName of allFields) {
-      let inferredType = null;
+      let inferredType: FieldDefinition | null = null;
 
       // Search across all files until we find a non-null value for this field
       fileLoop: for (const file of files) {
@@ -137,7 +137,7 @@ export class JsonParquetMerger {
         try {
           const parsed = JSON.parse(content);
           jsonData = Array.isArray(parsed) ? parsed : [parsed];
-        } catch (error) {
+        } catch {
           continue; // Skip files that can't be parsed
         }
 

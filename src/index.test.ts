@@ -1,8 +1,48 @@
 import {vol} from 'memfs';
-import {ParquetSchema} from '@dsnp/parquetjs';
-import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
+import {ParquetSchema, ParquetWriter} from '@dsnp/parquetjs';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  MockInstance,
+} from 'vitest';
 
 import {JsonParquetMerger, CompressionType} from './index';
+
+/**
+ * Type for a mocked ParquetWriter where methods are replaced with mock instances.
+ * This provides proper typing while allowing the object to be used where ParquetWriter is expected.
+ */
+type MockedParquetWriter = {
+  [K in keyof ParquetWriter]: ParquetWriter[K] extends (
+    ...args: infer A
+  ) => infer R
+    ? MockInstance<ParquetWriter[K]> & ((...args: A) => R)
+    : ParquetWriter[K];
+};
+
+/**
+ * Creates a mock ParquetWriter for testing.
+ * This factory centralizes the mock creation and type assertion.
+ */
+function createMockParquetWriter(): MockedParquetWriter {
+  return {
+    appendRow: vi.fn(),
+    close: vi.fn(),
+    schema: {} as ParquetSchema,
+    envelopeWriter: null,
+    rowBuffer: {} as ParquetWriter['rowBuffer'],
+    rowGroupSize: 1000,
+    closed: false,
+    userMetadata: {},
+    setMetadata: vi.fn(),
+    setRowGroupSize: vi.fn(),
+    setPageSize: vi.fn(),
+  } as MockedParquetWriter;
+}
 
 // Mock external dependencies before importing the module under test
 vi.mock('fs/promises', () => import('memfs').then(({fs}) => fs.promises));
@@ -540,19 +580,7 @@ describe('JsonParquetMerger', () => {
 
   describe('writeBatch', () => {
     it('should write records to ParquetWriter and update count', async () => {
-      const mockWriter = {
-        appendRow: vi.fn(),
-        schema: {} as any,
-        envelopeWriter: null,
-        rowBuffer: {} as any,
-        rowGroupSize: 1000,
-        closed: false,
-        userMetadata: {},
-        close: vi.fn(),
-        setMetadata: vi.fn(),
-        setRowGroupSize: vi.fn(),
-        setPageSize: vi.fn(),
-      } as any;
+      const mockWriter = createMockParquetWriter();
       const batch = [{id: 1}, {id: 2}];
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
