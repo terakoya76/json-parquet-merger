@@ -51,7 +51,9 @@ vi.mock('@dsnp/parquetjs', () => ({
   ParquetWriter: {
     openFile: vi.fn(),
   },
-  ParquetSchema: vi.fn().mockImplementation(fields => ({fields})),
+  ParquetSchema: vi.fn().mockImplementation(function (this: any, fields: any) {
+    this.fields = fields;
+  }),
 }));
 vi.mock('chalk', () => ({
   default: {

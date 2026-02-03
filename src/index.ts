@@ -1,11 +1,10 @@
-#!/usr/bin/env node
-
 import {Command} from 'commander';
 import {glob} from 'glob';
 import chalk from 'chalk';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import {ParquetWriter, ParquetSchema, FieldDefinition} from '@dsnp/parquetjs';
+import {fileURLToPath} from 'node:url';
 
 export type CompressionType = 'UNCOMPRESSED' | 'GZIP' | 'SNAPPY' | 'BROTLI';
 
@@ -52,6 +51,12 @@ export class JsonParquetMerger {
 
       // Process files in batches
       await this.processFiles(files);
+
+      if (this.processedCount === 0) {
+        throw new Error(
+          'No records were processed - all files may have failed validation or were empty',
+        );
+      }
 
       console.log(
         chalk.green(
@@ -403,5 +408,11 @@ async function main(): Promise<void> {
   await merger.run();
 }
 
-// Always execute main when this module is loaded as a binary
-main().catch(console.error);
+// Only execute main when this module is run directly, not when imported
+const __filename = fileURLToPath(import.meta.url);
+const isMainModule =
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
+
+if (isMainModule) {
+  main().catch(console.error);
+}
