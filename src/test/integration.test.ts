@@ -1,9 +1,49 @@
 import * as fs from 'fs/promises';
 import {ParquetWriter, ParquetSchema} from '@dsnp/parquetjs';
 import * as path from 'path';
-import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  MockInstance,
+} from 'vitest';
 
 import {JsonParquetMerger, CompressionType} from '../index';
+
+/**
+ * Type for a mocked ParquetWriter where methods are replaced with mock instances.
+ * This provides proper typing while allowing the object to be used where ParquetWriter is expected.
+ */
+type MockedParquetWriter = {
+  [K in keyof ParquetWriter]: ParquetWriter[K] extends (
+    ...args: infer A
+  ) => infer R
+    ? MockInstance<ParquetWriter[K]> & ((...args: A) => R)
+    : ParquetWriter[K];
+};
+
+/**
+ * Creates a mock ParquetWriter for testing.
+ * This factory centralizes the mock creation and type assertion.
+ */
+function createMockParquetWriter(): MockedParquetWriter {
+  return {
+    appendRow: vi.fn(),
+    close: vi.fn(),
+    schema: {} as ParquetSchema,
+    envelopeWriter: null,
+    rowBuffer: {} as ParquetWriter['rowBuffer'],
+    rowGroupSize: 1000,
+    closed: false,
+    userMetadata: {},
+    setMetadata: vi.fn(),
+    setRowGroupSize: vi.fn(),
+    setPageSize: vi.fn(),
+  } as MockedParquetWriter;
+}
 
 // Mock only the ParquetWriter since we don't want to create actual Parquet files
 vi.mock('@dsnp/parquetjs', () => ({
@@ -24,7 +64,7 @@ vi.mock('chalk', () => ({
 }));
 
 describe('JsonParquetMerger Integration Tests', () => {
-  let mockWriter: any;
+  let mockWriter: MockedParquetWriter;
   const testDataDir = path.resolve(__dirname, './data');
   const outputPath = path.join(testDataDir, './output/test.parquet');
 
@@ -32,19 +72,7 @@ describe('JsonParquetMerger Integration Tests', () => {
     // Create output directory
     await fs.mkdir(path.dirname(outputPath), {recursive: true});
 
-    mockWriter = {
-      appendRow: vi.fn(),
-      close: vi.fn(),
-      schema: {} as any,
-      envelopeWriter: null,
-      rowBuffer: {} as any,
-      rowGroupSize: 1000,
-      closed: false,
-      userMetadata: {},
-      setMetadata: vi.fn(),
-      setRowGroupSize: vi.fn(),
-      setPageSize: vi.fn(),
-    } as any;
+    mockWriter = createMockParquetWriter();
 
     vi.mocked(ParquetWriter.openFile).mockResolvedValue(mockWriter);
     vi.clearAllMocks();
