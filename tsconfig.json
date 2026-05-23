@@ -1,5 +1,4 @@
 {
-  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
@@ -8,6 +7,11 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "stripInternal": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -15,11 +19,10 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "pretty": true,
     "noEmitOnError": false,
     "composite": false
   },
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

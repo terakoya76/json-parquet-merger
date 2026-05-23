@@ -1,5 +1,0 @@
-publicHoistPattern:
-  - "*eslint*"
-engineStrict: true
-allowBuilds:
-  esbuild: false

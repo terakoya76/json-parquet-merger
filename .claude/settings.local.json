@@ -19,7 +19,8 @@
       "Bash(pnpm search:*)",
       "Bash(pnpm tsx:*)",
       "Bash(pnpm vitest run:*)",
-      "Bash(tsx src/index.ts:*)"
+      "Bash(tsx src/index.ts:*)",
+      "Bash(mise exec *)"
     ],
     "deny": [
       "Bash(curl:*)"

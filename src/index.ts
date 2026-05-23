@@ -1,12 +1,16 @@
-import {Command} from 'commander';
-import {glob} from 'glob';
-import chalk from 'chalk';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import {ParquetWriter, ParquetSchema, FieldDefinition} from '@dsnp/parquetjs';
-import {fileURLToPath} from 'node:url';
+import { fileURLToPath } from "node:url";
+import {
+  type FieldDefinition,
+  ParquetSchema,
+  ParquetWriter,
+} from "@dsnp/parquetjs";
+import chalk from "chalk";
+import { Command } from "commander";
+import * as fs from "fs/promises";
+import { glob } from "glob";
+import * as path from "path";
 
-export type CompressionType = 'UNCOMPRESSED' | 'GZIP' | 'SNAPPY' | 'BROTLI';
+export type CompressionType = "UNCOMPRESSED" | "GZIP" | "SNAPPY" | "BROTLI";
 
 export interface ProcessingOptions {
   input: string;
@@ -32,7 +36,7 @@ export class JsonParquetMerger {
 
   async run(): Promise<void> {
     try {
-      console.log(chalk.blue('🚀 Starting JSON to Parquet merger...'));
+      console.log(chalk.blue("🚀 Starting JSON to Parquet merger..."));
 
       // Discover files
       const files = await this.discoverFiles();
@@ -41,20 +45,20 @@ export class JsonParquetMerger {
       );
 
       if (files.length === 0) {
-        console.log(chalk.yellow('⚠️  No JSON files found matching criteria'));
+        console.log(chalk.yellow("⚠️  No JSON files found matching criteria"));
         return;
       }
 
       // Infer schema from all files
       await this.inferSchema(files);
-      console.log(chalk.green('🔍 Schema inferred successfully'));
+      console.log(chalk.green("🔍 Schema inferred successfully"));
 
       // Process files in batches
       await this.processFiles(files);
 
       if (this.processedCount === 0) {
         throw new Error(
-          'No records were processed - all files may have failed validation or were empty',
+          "No records were processed - all files may have failed validation or were empty",
         );
       }
 
@@ -65,10 +69,10 @@ export class JsonParquetMerger {
       );
     } catch (error) {
       console.error(
-        chalk.red('❌ Error:'),
+        chalk.red("❌ Error:"),
         error instanceof Error ? error.message : String(error),
       );
-      throw new Error('Processing failed');
+      throw new Error("Processing failed");
     }
   }
 
@@ -83,7 +87,7 @@ export class JsonParquetMerger {
     }
 
     if (inputStat?.isDirectory()) {
-      searchPattern = path.join(this.options.input, '**/*.json');
+      searchPattern = path.join(this.options.input, "**/*.json");
     } else {
       throw new Error(`Input path ${this.options.input} does not exist`);
     }
@@ -93,7 +97,7 @@ export class JsonParquetMerger {
     // Apply pattern filtering if specified
     if (this.options.pattern) {
       const regex = new RegExp(this.options.pattern);
-      files = files.filter(file => regex.test(path.basename(file)));
+      files = files.filter((file) => regex.test(path.basename(file)));
     }
 
     return files;
@@ -106,7 +110,7 @@ export class JsonParquetMerger {
 
     // First pass: collect all field names from all files
     for (const file of files) {
-      const content = await fs.readFile(file, 'utf-8');
+      const content = await fs.readFile(file, "utf-8");
       let jsonData: JsonRecord[];
 
       try {
@@ -122,12 +126,14 @@ export class JsonParquetMerger {
 
       // Collect all field names from this file
       for (const record of jsonData) {
-        Object.keys(record).forEach(key => allFields.add(key));
+        for (const key of Object.keys(record)) {
+          allFields.add(key);
+        }
       }
     }
 
     if (allFields.size === 0) {
-      throw new Error('No fields found in any of the input files');
+      throw new Error("No fields found in any of the input files");
     }
 
     // Second pass: for each field, find the first non-null value across all files
@@ -136,7 +142,7 @@ export class JsonParquetMerger {
 
       // Search across all files until we find a non-null value for this field
       fileLoop: for (const file of files) {
-        const content = await fs.readFile(file, 'utf-8');
+        const content = await fs.readFile(file, "utf-8");
         let jsonData: JsonRecord[];
 
         try {
@@ -149,36 +155,36 @@ export class JsonParquetMerger {
         for (const record of jsonData) {
           const value = record[fieldName];
           if (value !== null && value !== undefined) {
-            if (typeof value === 'string') {
+            if (typeof value === "string") {
               inferredType = {
-                type: 'UTF8',
+                type: "UTF8",
                 compression: this.options.compression,
                 optional: true,
               };
               break fileLoop;
-            } else if (typeof value === 'number') {
+            } else if (typeof value === "number") {
               inferredType = Number.isInteger(value)
                 ? {
-                    type: 'INT64',
+                    type: "INT64",
                     compression: this.options.compression,
                     optional: true,
                   }
                 : {
-                    type: 'DOUBLE',
+                    type: "DOUBLE",
                     compression: this.options.compression,
                     optional: true,
                   };
               break fileLoop;
-            } else if (typeof value === 'boolean') {
+            } else if (typeof value === "boolean") {
               inferredType = {
-                type: 'BOOLEAN',
+                type: "BOOLEAN",
                 compression: this.options.compression,
                 optional: true,
               };
               break fileLoop;
             } else if (value instanceof Date) {
               inferredType = {
-                type: 'TIMESTAMP_MILLIS',
+                type: "TIMESTAMP_MILLIS",
                 compression: this.options.compression,
                 optional: true,
               };
@@ -186,7 +192,7 @@ export class JsonParquetMerger {
             } else {
               // Convert objects/arrays to JSON strings
               inferredType = {
-                type: 'UTF8',
+                type: "UTF8",
                 compression: this.options.compression,
                 optional: true,
               };
@@ -198,7 +204,7 @@ export class JsonParquetMerger {
 
       // If all values are null across all files, default to UTF8
       schemaFields[fieldName] = inferredType || {
-        type: 'UTF8',
+        type: "UTF8",
         compression: this.options.compression,
         optional: true,
       };
@@ -218,19 +224,19 @@ export class JsonParquetMerger {
       const recordKeys = Object.keys(record);
 
       // Check for missing fields
-      const missingFields = schemaKeys.filter(key => !(key in record));
+      const missingFields = schemaKeys.filter((key) => !(key in record));
       if (missingFields.length > 0) {
         isValid = false;
-        const errorMsg = `Missing fields in record: ${missingFields.join(', ')}`;
+        const errorMsg = `Missing fields in record: ${missingFields.join(", ")}`;
         validationErrors.push(errorMsg);
         console.warn(chalk.yellow(`⚠️  ${errorMsg}`));
       }
 
       // Check for extra fields
-      const extraFields = recordKeys.filter(key => !schemaKeys.includes(key));
+      const extraFields = recordKeys.filter((key) => !schemaKeys.includes(key));
       if (extraFields.length > 0) {
         isValid = false;
-        const errorMsg = `Extra fields in record: ${extraFields.join(', ')}`;
+        const errorMsg = `Extra fields in record: ${extraFields.join(", ")}`;
         validationErrors.push(errorMsg);
         console.warn(chalk.yellow(`⚠️  ${errorMsg}`));
       }
@@ -245,7 +251,7 @@ export class JsonParquetMerger {
     for (const [key, value] of Object.entries(record)) {
       if (value === null || value === undefined) {
         transformed[key] = null;
-      } else if (typeof value === 'object' && !(value instanceof Date)) {
+      } else if (typeof value === "object" && !(value instanceof Date)) {
         // Convert objects/arrays to JSON strings
         transformed[key] = JSON.stringify(value);
       } else {
@@ -258,7 +264,7 @@ export class JsonParquetMerger {
 
   private async processFiles(files: string[]): Promise<void> {
     if (!this.inferredSchema) {
-      throw new Error('Schema not inferred');
+      throw new Error("Schema not inferred");
     }
     const writer = await ParquetWriter.openFile(
       this.inferredSchema,
@@ -274,7 +280,7 @@ export class JsonParquetMerger {
           chalk.blue(`📄 Processing file ${i + 1}/${files.length}: ${file}`),
         );
 
-        const content = await fs.readFile(file, 'utf-8');
+        const content = await fs.readFile(file, "utf-8");
         let jsonData: JsonRecord[];
 
         try {
@@ -339,27 +345,27 @@ async function main(): Promise<void> {
   const program = new Command();
 
   program
-    .name('json-parquet-merger')
+    .name("json-parquet-merger")
     .description(
-      'Merge multiple JSON files with identical schemas into a single Parquet file',
+      "Merge multiple JSON files with identical schemas into a single Parquet file",
     )
-    .version('1.0.0')
-    .requiredOption('-i, --input <path>', 'Input directory or file path')
-    .requiredOption('-o, --output <path>', 'Output Parquet file path')
+    .version("1.0.0")
+    .requiredOption("-i, --input <path>", "Input directory or file path")
+    .requiredOption("-o, --output <path>", "Output Parquet file path")
     .option(
-      '-p, --pattern <regex>',
-      'Regular expression pattern for filtering JSON files',
+      "-p, --pattern <regex>",
+      "Regular expression pattern for filtering JSON files",
     )
-    .option('--validate', 'Enable schema validation across all files', false)
+    .option("--validate", "Enable schema validation across all files", false)
     .option(
-      '-b, --batch-size <number>',
-      'Batch size for processing records',
-      '1000',
+      "-b, --batch-size <number>",
+      "Batch size for processing records",
+      "1000",
     )
     .option(
-      '-c, --compression <type>',
-      'Compression type: uncompressed, gzip, snappy, brotli',
-      'uncompressed',
+      "-c, --compression <type>",
+      "Compression type: uncompressed, gzip, snappy, brotli",
+      "uncompressed",
     );
 
   program.parse();
@@ -368,17 +374,17 @@ async function main(): Promise<void> {
   // Convert batch size to number
   options.batchSize = parseInt(options.batchSize.toString(), 10);
 
-  if (isNaN(options.batchSize) || options.batchSize < 1) {
-    console.error(chalk.red('❌ Batch size must be a positive number'));
-    throw new Error('Invalid batch size');
+  if (Number.isNaN(options.batchSize) || options.batchSize < 1) {
+    console.error(chalk.red("❌ Batch size must be a positive number"));
+    throw new Error("Invalid batch size");
   }
 
   // Normalize and validate compression option
   const compressionMap: Record<string, CompressionType> = {
-    uncompressed: 'UNCOMPRESSED',
-    gzip: 'GZIP',
-    snappy: 'SNAPPY',
-    brotli: 'BROTLI',
+    uncompressed: "UNCOMPRESSED",
+    gzip: "GZIP",
+    snappy: "SNAPPY",
+    brotli: "BROTLI",
   };
 
   const compression = options.compression;
@@ -388,7 +394,7 @@ async function main(): Promise<void> {
         `❌ Invalid compression type: ${options.compression}. Valid options: uncompressed, gzip, snappy, brotli`,
       ),
     );
-    throw new Error('Invalid compression type');
+    throw new Error("Invalid compression type");
   }
   options.compression = compressionMap[compression];
 
@@ -400,7 +406,7 @@ async function main(): Promise<void> {
     console.error(
       chalk.red(`❌ Output directory does not exist: ${outputDir}`),
     );
-    throw new Error('Output directory does not exist');
+    throw new Error("Output directory does not exist");
   }
 
   // Create and run merger

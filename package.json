@@ -14,12 +14,11 @@
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "cli": "tsx src/index.ts",
-    "clean": "gts clean",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "pnpm lint:gts && pnpm lint:tsr",
-    "lint:gts": "gts fix",
-    "lint:tsr": "tsr -w ./src ./script"
+    "lint": "pnpm lint:biome && pnpm lint:tsr",
+    "lint:biome": "biome check --write .",
+    "lint:tsr": "tsr -w ./src"
   },
   "dependencies": {
     "@dsnp/parquetjs": "^1.8.7",
@@ -29,9 +28,8 @@
     "tsr": "^1.3.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
     "@types/node": "^24.12.4",
-    "eslint-plugin-n": "^18.0.1",
-    "gts": "^7.0.0",
     "memfs": "^4.57.2",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
