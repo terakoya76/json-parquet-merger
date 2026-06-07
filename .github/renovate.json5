@@ -4,6 +4,7 @@
     "config:recommended"
   ],
   "labels": ["dependencies"],
+  "assignees": ["terakoya76"],
   "minimumReleaseAge": "3 days",
   // Hold the update (do not create the PR) until the age requirement is met.
   "internalChecksFilter": "strict",
