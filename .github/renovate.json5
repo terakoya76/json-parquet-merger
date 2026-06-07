@@ -24,9 +24,9 @@
       "matchUpdateTypes": [
         "patch",
         "minor"
-      ]
-      // automerge: true,
-      // platformAutomerge: true
+      ],
+      automerge: true,
+      platformAutomerge: true
     }
   ]
 }
