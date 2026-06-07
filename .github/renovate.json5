@@ -4,6 +4,9 @@
     "config:recommended"
   ],
   "labels": ["dependencies"],
+  "minimumReleaseAge": "3 days",
+  // Hold the update (do not create the PR) until the age requirement is met.
+  "internalChecksFilter": "strict",
   "packageRules": [
     {
       groupName: 'github actions',
