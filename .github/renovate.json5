@@ -4,6 +4,10 @@
     "config:recommended"
   ],
   "labels": ["dependencies"],
+  "assignees": ["terakoya76"],
+  "minimumReleaseAge": "3 days",
+  // Hold the update (do not create the PR) until the age requirement is met.
+  "internalChecksFilter": "strict",
   "packageRules": [
     {
       groupName: 'github actions',
@@ -20,9 +24,9 @@
       "matchUpdateTypes": [
         "patch",
         "minor"
-      ]
-      // automerge: true,
-      // platformAutomerge: true
+      ],
+      automerge: true,
+      platformAutomerge: true
     }
   ]
 }
